@@ -33,7 +33,7 @@ func GetDefaultConfig() Config {
 		Port:     3306,
 		User:     "root",
 		Password: "123456", // 修改为你的密码
-		Name:     "hrms",
+		Name:     "ptms",
 		Charset:  "utf8mb4",
 	}
 }
