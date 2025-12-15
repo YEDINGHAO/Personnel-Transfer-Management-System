@@ -1,4 +1,4 @@
-// main.go - 完整版
+// main.go
 package main
 
 import (
@@ -6,106 +6,76 @@ import (
 
 	"github.com/YEDINGHAO/Personnel-Transfer-Management-System/api"
 	"github.com/YEDINGHAO/Personnel-Transfer-Management-System/database"
+	"github.com/YEDINGHAO/Personnel-Transfer-Management-System/models"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 初始化数据库
+	// 1. 初始化数据库
 	db, err := database.Init()
 	if err != nil {
-		log.Printf("⚠️  数据库连接失败，但API服务将继续运行（仅使用内存数据）: %v", err)
+		log.Printf("⚠️ 数据库连接失败: %v", err)
 	} else {
-		log.Println("✅ 数据库连接成功")
-		// 测试数据库连接
-		var result int
-		db.Raw("SELECT 1").Scan(&result)
-		log.Printf("✅ 数据库连接测试成功: %d", result)
+		// 自动迁移所有模型表 (确保包含 Transfer 和 Department)
+		db.AutoMigrate(&models.User{}, &models.Employee{}, &models.Department{}, &models.Transfer{})
+		log.Println("✅ 数据库表结构同步完成")
 	}
 
-	// 创建Gin实例
 	r := gin.Default()
 
-	// 添加CORS中间件（允许跨域请求）
+	// CORS 中间件
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")                                   //允许所有域名（*）访问你的 API
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")    //允许的 HTTP 方法
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Token") //允许客户端携带的请求头
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Next()
 	})
 
-	// 创建控制器实例
-	employeeController := api.EmployeeController{}
+	// 实例化控制器
+	authCtrl := api.AuthController{}
+	empCtrl := api.EmployeeController{}
+	deptCtrl := api.DepartmentController{} // 新增
+	transCtrl := api.TransferController{}  // 新增
+	backupCtrl := api.BackupController{}   // 新增
 
-	// API路由组
 	apiGroup := r.Group("/api")
 	{
-		// 员工管理
-		apiGroup.GET("/employees", employeeController.GetEmployees)
-		apiGroup.GET("/employees/:id", employeeController.GetEmployee)
-		apiGroup.POST("/employees", employeeController.CreateEmployee)
-		apiGroup.PUT("/employees/:id", employeeController.UpdateEmployee)
-		apiGroup.DELETE("/employees/:id", employeeController.DeleteEmployee)
+		// --- 认证模块 ---
+		apiGroup.POST("/login", authCtrl.Login)
+		apiGroup.POST("/register", authCtrl.Register) // 开发测试用
+
+		// --- 员工管理模块 ---
+		apiGroup.GET("/employees", empCtrl.GetEmployees)
+		apiGroup.GET("/employees/:id", empCtrl.GetEmployee)
+		apiGroup.POST("/employees", empCtrl.CreateEmployee)
+		apiGroup.PUT("/employees/:id", empCtrl.UpdateEmployee)
+		apiGroup.DELETE("/employees/:id", empCtrl.DeleteEmployee)
+
+		// --- 部门管理模块 (新增) ---
+		apiGroup.GET("/departments", deptCtrl.GetDepartments)
+		apiGroup.POST("/departments", deptCtrl.CreateDepartment)
+
+		// --- 调动管理子系统 (新增) ---
+		// 1. 提交调动/退休申请
+		apiGroup.POST("/transfers", transCtrl.CreateTransfer)
+		// 2. 获取调动记录列表 (可筛选待审批)
+		apiGroup.GET("/transfers", transCtrl.GetTransfers)
+		// 3. 审批调动 (通过后自动更新员工表)
+		apiGroup.PUT("/transfers/:id/approve", transCtrl.ApproveTransfer)
+
+		// --- 系统维护模块 (新增) ---
+		// 导出员工数据备份
+		apiGroup.GET("/backup/export", backupCtrl.ExportEmployees)
 	}
 
-	// 基础路由
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"code":     0,
-			"message":  "人事调动管理系统 API",
-			"version":  "1.0.0",
-			"database": err == nil,
-			"endpoints": []gin.H{
-				{"method": "GET", "path": "/api/employees", "description": "获取员工列表"},
-				{"method": "GET", "path": "/api/employees/:id", "description": "获取员工详情"},
-				{"method": "POST", "path": "/api/employees", "description": "创建员工"},
-				{"method": "PUT", "path": "/api/employees/:id", "description": "更新员工"},
-				{"method": "DELETE", "path": "/api/employees/:id", "description": "删除员工"},
-			},
-		})
-	})
-
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":   "healthy",
-			"database": err == nil,
-		})
-	})
-
-	// 启动服务器
+	// 启动服务
 	port := ":8080"
-	log.Printf("\n🚀 服务器启动在 http://localhost%s", port)
-	log.Println("\n📋 可用接口：")
-	log.Println("  GET    /                    - API文档")
-	log.Println("  GET    /health              - 健康检查")
-	log.Println("  GET    /api/employees       - 获取员工列表")
-	log.Println("  GET    /api/employees/:id   - 获取员工详情")
-	log.Println("  POST   /api/employees       - 创建员工")
-	log.Println("  PUT    /api/employees/:id   - 更新员工")
-	log.Println("  DELETE /api/employees/:id   - 删除员工")
-	log.Println("\n💡 提示：")
-	log.Println("  使用 curl 或 Postman 测试API")
-	log.Println("  创建员工示例：")
-	log.Println(`    curl -X POST http://localhost:8080/api/employees \
-      -H "Content-Type: application/json" \
-      -d '{
-        "employee_id": "EMP001",
-        "name": "张三",
-        "status": 1,
-        "arrival_date": "2024-01-15",
-        "job_title": "软件工程师",
-        "position": "高级工程师",
-        "department": "技术部",
-        "phone": "13800138001",
-        "email": "zhangsan@company.com"
-      }'`)
-
+	log.Printf("🚀 服务器启动在 http://localhost%s", port)
 	if err := r.Run(port); err != nil {
-		log.Fatal("启动失败:", err)
+		log.Fatal(err)
 	}
 }
