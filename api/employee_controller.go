@@ -217,7 +217,7 @@ func (ec *EmployeeController) CreateEmployee(c *gin.Context) {
 	// 验证员工编号是否已存在
 	db := database.GetDB()
 	var count int64
-	db.Model(&models.Employee{}).Where("employee_id = ?", req.EmployeeID).Count(&count)
+	db.Model(&models.Employee{}).Where("employee_no = ?", req.EmployeeID).Count(&count)
 	if count > 0 {
 		errorResponse(c, 400, "员工编号已存在")
 		return

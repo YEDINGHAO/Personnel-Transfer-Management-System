@@ -19,20 +19,21 @@ const (
 
 // Employee 员工模型
 type Employee struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	EmployeeID  string    `gorm:"size:20;uniqueIndex;not null" json:"employee_id"`
-	Name        string    `gorm:"size:50;not null" json:"name"`
-	Status      int       `gorm:"not null;default:1" json:"status"` // 使用int而不是EmployeeStatus，便于JSON序列化
-	ArrivalDate string    `gorm:"type:date;not null" json:"arrival_date"`
-	JobTitle    string    `gorm:"size:100" json:"job_title"`
-	Position    string    `gorm:"size:100" json:"position"`
-	Department  string    `gorm:"size:100" json:"department"` // 先简单处理，后面再关联
-	Phone       string    `gorm:"size:20" json:"phone"`
-	Email       string    `gorm:"size:100" json:"email"`
-	Address     string    `gorm:"type:text" json:"address"`
-	Remark      string    `gorm:"type:text" json:"remark"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          uint       `gorm:"primaryKey" json:"id"`
+	EmployeeID  string     `gorm:"column:employee_no;size:20;uniqueIndex;not null" json:"employee_id"`
+	Name        string     `gorm:"size:50;not null" json:"name"`
+	Status      int        `gorm:"not null;default:1" json:"status"` // 使用int而不是EmployeeStatus，便于JSON序列化
+	ArrivalDate string     `gorm:"type:date;not null" json:"arrival_date"`
+	JobTitle    string     `gorm:"size:100" json:"job_title"`
+	Position    string     `gorm:"size:100" json:"position"`
+	Department  string     `gorm:"size:100" json:"department"` // 先简单处理，后面再关联
+	Phone       string     `gorm:"size:20" json:"phone"`
+	Email       string     `gorm:"size:100" json:"email"`
+	Address     string     `gorm:"type:text" json:"address"`
+	Remark      string     `gorm:"type:text" json:"remark"`
+	Transfers   []Transfer `gorm:"foreignKey:EmployeeID;constraint:-" json:"-"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // TableName 指定表名

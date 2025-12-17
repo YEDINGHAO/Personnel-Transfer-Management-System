@@ -21,7 +21,7 @@ const (
 type Transfer struct {
 	ID           uint       `gorm:"primaryKey" json:"id"`
 	EmployeeID   uint       `gorm:"not null;index" json:"employee_id"`
-	Employee     Employee   `gorm:"foreignKey:EmployeeID" json:"employee"`   // 关联员工
+	Employee     Employee   `gorm:"foreignKey:EmployeeID;references:ID;constraint:-" json:"employee"`
 	TransferDate string     `gorm:"type:date;not null" json:"transfer_date"` // 调动日期
 	Type         int        `gorm:"not null" json:"type"`                    // 调动类型
 	FromDeptID   uint       `json:"from_dept_id"`                            // 调出部门

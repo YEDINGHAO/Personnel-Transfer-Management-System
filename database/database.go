@@ -50,8 +50,7 @@ func Init() (*gorm.DB, error) {
 
 		// 连接数据库
 		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-			// 关闭默认事务，提高性能
-			SkipDefaultTransaction: true,
+			SkipDefaultTransaction:                   true,
 		})
 
 		if err != nil {
@@ -74,9 +73,11 @@ func Init() (*gorm.DB, error) {
 
 // AutoMigrate 自动迁移表结构
 func AutoMigrate() error {
-	// 导入模型
 	models := []interface{}{
+		&models.User{},
 		&models.Employee{},
+		&models.Department{},
+		&models.Transfer{},
 	}
 
 	for _, model := range models {
