@@ -58,6 +58,8 @@ func main() {
 		// --- 部门管理模块 (新增) ---
 		apiGroup.GET("/departments", deptCtrl.GetDepartments)
 		apiGroup.POST("/departments", deptCtrl.CreateDepartment)
+		apiGroup.PUT("/departments/:id", deptCtrl.UpdateDepartment)
+		apiGroup.DELETE("/departments/:id", deptCtrl.DeleteDepartment)
 
 		// --- 调动管理子系统 (新增) ---
 		// 1. 提交调动/退休申请

@@ -13,8 +13,13 @@ type Department struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// 请求/响应结构体
 type CreateDepartmentRequest struct {
+	DeptNo    string `json:"dept_no" binding:"required"`
+	Name      string `json:"name" binding:"required"`
+	ManagerID uint   `json:"manager_id"`
+}
+
+type UpdateDepartmentRequest struct {
 	DeptNo    string `json:"dept_no" binding:"required"`
 	Name      string `json:"name" binding:"required"`
 	ManagerID uint   `json:"manager_id"`

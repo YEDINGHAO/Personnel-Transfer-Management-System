@@ -25,6 +25,14 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type RegisterRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	RealName string `json:"real_name"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+}
+
 // LoginResponse 登录响应
 type LoginResponse struct {
 	Token string `json:"token"`

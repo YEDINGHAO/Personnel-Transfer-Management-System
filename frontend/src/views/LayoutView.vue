@@ -6,6 +6,9 @@
         <button class="menu-item" :class="{ active: isActive('/employees') }" @click="go('/employees')">
           员工管理
         </button>
+        <button class="menu-item" :class="{ active: isActive('/departments') }" @click="go('/departments')">
+          部门管理
+        </button>
         <button class="menu-item" :class="{ active: isActive('/transfers') }" @click="go('/transfers')">
           调动管理
         </button>
@@ -60,4 +63,3 @@ const logout = () => {
   router.push("/login")
 }
 </script>
-

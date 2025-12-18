@@ -22,16 +22,16 @@ type Transfer struct {
 	ID           uint       `gorm:"primaryKey" json:"id"`
 	EmployeeID   uint       `gorm:"not null;index" json:"employee_id"`
 	Employee     Employee   `gorm:"foreignKey:EmployeeID;references:ID;constraint:-" json:"employee"`
-	TransferDate string     `gorm:"type:date;not null" json:"transfer_date"` // 调动日期
-	Type         int        `gorm:"not null" json:"type"`                    // 调动类型
-	FromDeptID   uint       `json:"from_dept_id"`                            // 调出部门
+	TransferDate string     `gorm:"type:date;not null" json:"transfer_date"`
+	Type         int        `gorm:"not null" json:"type"`
+	FromDeptID   *uint      `json:"from_dept_id"`
 	FromDept     Department `gorm:"foreignKey:FromDeptID" json:"from_dept"`
-	ToDeptID     uint       `json:"to_dept_id"` // 调入部门
+	ToDeptID     *uint      `json:"to_dept_id"`
 	ToDept       Department `gorm:"foreignKey:ToDeptID" json:"to_dept"`
-	Reason       string     `gorm:"type:text" json:"reason"`          // 调动原因
-	Status       int        `gorm:"not null;default:1" json:"status"` // 调动状态
-	ApproverID   uint       `json:"approver_id"`                      // 审批人ID
+	Reason       string     `gorm:"type:text" json:"reason"`
+	Status       int        `gorm:"not null;default:1" json:"status"`
+	ApproverID   uint       `json:"approver_id"`
 	Approver     User       `gorm:"foreignKey:ApproverID" json:"approver,omitempty"`
-	ApprovedAt   time.Time  `json:"approved_at"`
+	ApprovedAt   *time.Time `json:"approved_at"`
 	CreatedAt    time.Time  `json:"created_at"`
 }

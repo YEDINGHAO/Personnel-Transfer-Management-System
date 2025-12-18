@@ -23,8 +23,12 @@
           <th>状态</th>
           <th>部门</th>
           <th>职位</th>
+          <th>职称</th>
           <th>入职日期</th>
           <th>电话</th>
+          <th>邮箱</th>
+          <th>地址</th>
+          <th>备注</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -35,15 +39,19 @@
           <td>{{ emp.status_text }}</td>
           <td>{{ emp.department }}</td>
           <td>{{ emp.position }}</td>
-          <td>{{ emp.arrival_date }}</td>
+          <td>{{ emp.job_title }}</td>
+          <td>{{ formatDate(emp.arrival_date) }}</td>
           <td>{{ emp.phone }}</td>
+          <td>{{ emp.email }}</td>
+          <td>{{ emp.address }}</td>
+          <td>{{ emp.remark }}</td>
           <td>
             <button class="link-button" @click="edit(emp)">编辑</button>
             <button class="link-button danger" @click="remove(emp)">删除</button>
           </td>
         </tr>
         <tr v-if="employees.length === 0">
-          <td colspan="8" class="empty-cell">暂无数据</td>
+          <td colspan="12" class="empty-cell">暂无数据</td>
         </tr>
       </tbody>
     </table>
@@ -78,7 +86,12 @@
           </div>
           <div class="form-item">
             <label>部门</label>
-            <input v-model="form.department" />
+            <select v-model="form.department">
+              <option value="">请选择部门</option>
+              <option v-for="d in departments" :key="d.id" :value="d.name">
+                {{ d.dept_no }} - {{ d.name }}
+              </option>
+            </select>
           </div>
           <div class="form-item">
             <label>职位</label>
@@ -114,6 +127,7 @@
 import { onMounted, reactive, ref, computed } from "vue"
 
 const employees = ref([])
+const departments = ref([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
@@ -150,6 +164,14 @@ const form = reactive({
   remark: ""
 })
 
+const todayString = () => {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
 const totalPages = computed(() => {
   if (pageSize.value === 0) {
     return 0
@@ -166,6 +188,14 @@ const authHeaders = () => {
     headers.Authorization = "Bearer " + token
   }
   return headers
+}
+
+const formatDate = v => {
+  if (!v) {
+    return ""
+  }
+  const s = String(v)
+  return s.length >= 10 ? s.slice(0, 10) : s
 }
 
 const loadEmployees = async () => {
@@ -191,6 +221,16 @@ const loadEmployees = async () => {
   }
 }
 
+const loadDepartments = async () => {
+  const res = await fetch("/api/departments", {
+    headers: authHeaders()
+  })
+  const data = await res.json()
+  if (data.code === 0) {
+    departments.value = data.data || []
+  }
+}
+
 const changePage = p => {
   page.value = p
   loadEmployees()
@@ -203,7 +243,7 @@ const openCreate = () => {
     employee_id: "",
     name: "",
     status: 1,
-    arrival_date: "",
+    arrival_date: todayString(),
     job_title: "",
     position: "",
     department: "",
@@ -279,6 +319,6 @@ const remove = async emp => {
 
 onMounted(() => {
   loadEmployees()
+  loadDepartments()
 })
 </script>
-

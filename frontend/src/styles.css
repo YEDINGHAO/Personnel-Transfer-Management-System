@@ -215,12 +215,16 @@ textarea {
   border-radius: 6px;
   overflow: hidden;
   font-size: 13px;
+  table-layout: fixed;
 }
 
 .table th,
 .table td {
   padding: 8px 10px;
   border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: middle;
+  word-break: break-all;
 }
 
 .table thead {
@@ -298,4 +302,3 @@ textarea {
 .link-button.danger {
   color: #dc2626;
 }
-

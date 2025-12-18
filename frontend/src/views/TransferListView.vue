@@ -65,8 +65,13 @@
         <h3>新建调动或离退休申请</h3>
         <form class="form" @submit.prevent="submitForm">
           <div class="form-item">
-            <label>员工ID</label>
-            <input v-model.number="form.employee_id" type="number" required />
+            <label>员工</label>
+            <select v-model.number="form.employee_id" @change="onEmployeeChange" required>
+              <option :value="0" disabled>请选择员工</option>
+              <option v-for="emp in employees" :key="emp.id" :value="emp.id">
+                {{ emp.employee_id }} - {{ emp.name }}
+              </option>
+            </select>
           </div>
           <div class="form-item">
             <label>调动类型</label>
@@ -85,8 +90,13 @@
             <input v-model.number="form.from_dept_id" type="number" />
           </div>
           <div class="form-item">
-            <label>调入部门ID</label>
-            <input v-model.number="form.to_dept_id" type="number" />
+            <label>调入部门</label>
+            <select v-model.number="form.to_dept_id">
+              <option :value="0">请选择部门</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                {{ dept.dept_no }} - {{ dept.name }}
+              </option>
+            </select>
           </div>
           <div class="form-item">
             <label>调动原因</label>
@@ -106,6 +116,8 @@
 import { onMounted, reactive, ref } from "vue"
 
 const transfers = ref([])
+const employees = ref([])
+const departments = ref([])
 const filters = reactive({
   employee_id: "",
   status: ""
@@ -113,7 +125,7 @@ const filters = reactive({
 
 const showDialog = ref(false)
 const form = reactive({
-  employee_id: null,
+  employee_id: 0,
   type: 1,
   transfer_date: "",
   from_dept_id: null,
@@ -129,6 +141,14 @@ const authHeaders = () => {
   }
   headers["Content-Type"] = "application/json"
   return headers
+}
+
+const todayString = () => {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
 const typeText = v => {
@@ -177,11 +197,34 @@ const loadTransfers = async () => {
   }
 }
 
+const loadEmployees = async () => {
+  const params = new URLSearchParams()
+  params.append("page", "1")
+  params.append("page_size", "100")
+  const res = await fetch("/api/employees?" + params.toString(), {
+    headers: authHeaders()
+  })
+  const data = await res.json()
+  if (data.code === 0) {
+    employees.value = data.data.items || []
+  }
+}
+
+const loadDepartments = async () => {
+  const res = await fetch("/api/departments", {
+    headers: authHeaders()
+  })
+  const data = await res.json()
+  if (data.code === 0) {
+    departments.value = data.data || []
+  }
+}
+
 const openCreate = () => {
   Object.assign(form, {
-    employee_id: null,
+    employee_id: 0,
     type: 1,
-    transfer_date: "",
+    transfer_date: todayString(),
     from_dept_id: null,
     to_dept_id: null,
     reason: ""
@@ -213,6 +256,29 @@ const submitForm = async () => {
     loadTransfers()
   } else {
     alert(data.message || "提交失败")
+  }
+}
+
+const onEmployeeChange = () => {
+  const emp = employees.value.find(e => e.id === form.employee_id)
+  if (!emp) {
+    form.from_dept_id = null
+    return
+  }
+  if (departments.value.length) {
+    const dept = departments.value.find(
+      d => d.name === emp.department || d.dept_no === emp.department
+    )
+    if (dept) {
+      form.from_dept_id = dept.id
+      return
+    }
+  }
+  if (emp.department) {
+    const n = Number(emp.department)
+    form.from_dept_id = Number.isFinite(n) && n > 0 ? n : null
+  } else {
+    form.from_dept_id = null
   }
 }
 
@@ -249,6 +315,7 @@ const approve = async (t, status) => {
 
 onMounted(() => {
   loadTransfers()
+  loadEmployees()
+  loadDepartments()
 })
 </script>
-

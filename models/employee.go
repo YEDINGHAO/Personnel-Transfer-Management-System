@@ -20,7 +20,7 @@ const (
 // Employee 员工模型
 type Employee struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
-	EmployeeID  string     `gorm:"column:employee_no;size:20;uniqueIndex;not null" json:"employee_id"`
+	EmployeeID  string     `gorm:"column:employee_id;size:20;uniqueIndex;not null" json:"employee_id"`
 	Name        string     `gorm:"size:50;not null" json:"name"`
 	Status      int        `gorm:"not null;default:1" json:"status"` // 使用int而不是EmployeeStatus，便于JSON序列化
 	ArrivalDate string     `gorm:"type:date;not null" json:"arrival_date"`

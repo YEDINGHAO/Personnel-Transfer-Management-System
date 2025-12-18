@@ -16,6 +16,9 @@
           {{ loading ? "登录中..." : "登录" }}
         </button>
         <p v-if="error" class="error-text">{{ error }}</p>
+        <button class="link-button" type="button" @click="goRegister">
+          还没有账号？去注册
+        </button>
       </form>
     </div>
   </div>
@@ -58,5 +61,8 @@ const onSubmit = async () => {
     loading.value = false
   }
 }
-</script>
 
+const goRegister = () => {
+  router.push("/register")
+}
+</script>

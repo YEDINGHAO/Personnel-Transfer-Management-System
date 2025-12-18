@@ -46,18 +46,41 @@ func (tc *TransferController) CreateTransfer(c *gin.Context) {
 		return
 	}
 
+	// 处理部门ID，0 视为未设置
+	var fromDeptID *uint
+	if req.FromDeptID != 0 {
+		fromDeptID = &req.FromDeptID
+		// 校验调出部门是否存在
+		var fromDept models.Department
+		if err := db.First(&fromDept, req.FromDeptID).Error; err != nil {
+			errorResponse(c, 400, "调出部门不存在")
+			return
+		}
+	}
+
+	var toDeptID *uint
+	if req.ToDeptID != 0 {
+		toDeptID = &req.ToDeptID
+		// 校验调入部门是否存在
+		var toDept models.Department
+		if err := db.First(&toDept, req.ToDeptID).Error; err != nil {
+			errorResponse(c, 400, "调入部门不存在")
+			return
+		}
+	}
+
 	transfer := models.Transfer{
 		EmployeeID:   req.EmployeeID,
 		Type:         req.Type,
 		TransferDate: req.TransferDate,
-		FromDeptID:   req.FromDeptID, // 建议前端自动填充当前部门ID
-		ToDeptID:     req.ToDeptID,
+		FromDeptID:   fromDeptID,
+		ToDeptID:     toDeptID,
 		Reason:       req.Reason,
-		Status:       models.TransferStatusPending, // 默认为待审批
+		Status:       models.TransferStatusPending,
 		CreatedAt:    time.Now(),
 	}
 
-	if err := db.Create(&transfer).Error; err != nil {
+	if err := db.Omit("ApproverID", "ApprovedAt").Create(&transfer).Error; err != nil {
 		errorResponse(c, 500, "创建申请失败")
 		return
 	}
@@ -113,7 +136,8 @@ func (tc *TransferController) ApproveTransfer(c *gin.Context) {
 		// 1. 更新调动表状态
 		transfer.Status = req.Status
 		transfer.ApproverID = req.ApproverID
-		transfer.ApprovedAt = time.Now()
+		now := time.Now()
+		transfer.ApprovedAt = &now
 
 		if err := tx.Save(&transfer).Error; err != nil {
 			return err
@@ -133,8 +157,11 @@ func (tc *TransferController) ApproveTransfer(c *gin.Context) {
 		// 根据调动类型更新员工信息
 		if transfer.Type == models.TransferTypeDepartment {
 			// 部门调动：查询新部门名称并更新
+			if transfer.ToDeptID == nil {
+				return fmt.Errorf("目标部门未设置")
+			}
 			var newDept models.Department
-			if err := tx.First(&newDept, transfer.ToDeptID).Error; err != nil {
+			if err := tx.First(&newDept, *transfer.ToDeptID).Error; err != nil {
 				return fmt.Errorf("目标部门不存在")
 			}
 			employee.Department = newDept.Name // 更新部门

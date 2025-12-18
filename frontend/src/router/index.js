@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router"
 import LoginView from "../views/LoginView.vue"
+import RegisterView from "../views/RegisterView.vue"
 import LayoutView from "../views/LayoutView.vue"
 import EmployeeListView from "../views/EmployeeListView.vue"
+import DepartmentListView from "../views/DepartmentListView.vue"
 import TransferListView from "../views/TransferListView.vue"
 import BackupView from "../views/BackupView.vue"
 
@@ -10,6 +12,11 @@ const routes = [
     path: "/login",
     name: "login",
     component: LoginView
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: RegisterView
   },
   {
     path: "/",
@@ -23,6 +30,11 @@ const routes = [
         path: "employees",
         name: "employees",
         component: EmployeeListView
+      },
+      {
+        path: "departments",
+        name: "departments",
+        component: DepartmentListView
       },
       {
         path: "transfers",
@@ -44,7 +56,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  if (to.path === "/login") {
+  if (to.path === "/login" || to.path === "/register") {
     next()
     return
   }
@@ -57,4 +69,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-

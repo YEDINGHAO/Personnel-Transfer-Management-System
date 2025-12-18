@@ -15,31 +15,36 @@ type AuthController struct{}
 
 // Register 用户注册（开发测试用）
 func (ac *AuthController) Register(c *gin.Context) {
-	var user models.User
+	var req models.RegisterRequest
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		errorResponse(c, 400, "请求参数错误")
 		return
 	}
 
-	// 检查用户名是否已存在
 	db := database.GetDB()
 	var count int64
-	db.Model(&models.User{}).Where("username = ?", user.Username).Count(&count)
+	db.Model(&models.User{}).Where("username = ?", req.Username).Count(&count)
 	if count > 0 {
 		errorResponse(c, 400, "用户名已存在")
 		return
 	}
 
-	// 加密密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		errorResponse(c, 500, "密码加密失败")
 		return
 	}
-	user.Password = string(hashedPassword)
 
-	// 创建用户
+	user := models.User{
+		Username:  req.Username,
+		Password:  string(hashedPassword),
+		RealName:  req.RealName,
+		Email:     req.Email,
+		Phone:     req.Phone,
+		LastLogin: time.Now(),
+	}
+
 	result := db.Create(&user)
 	if result.Error != nil {
 		errorResponse(c, 500, "注册失败")
