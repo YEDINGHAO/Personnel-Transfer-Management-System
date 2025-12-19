@@ -48,9 +48,9 @@ func Init() (*gorm.DB, error) {
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 			cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.Charset)
 
-		// 连接数据库
 		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 			SkipDefaultTransaction:                   true,
+			DisableForeignKeyConstraintWhenMigrating: true,
 		})
 
 		if err != nil {
@@ -86,7 +86,42 @@ func AutoMigrate() error {
 		}
 	}
 
+	if err := DropAllForeignKeys(); err != nil {
+		log.Printf("删除外键失败: %v", err)
+	}
+
 	log.Println("✅ 数据库表结构迁移完成")
+	return nil
+}
+
+func DropAllForeignKeys() error {
+	type ForeignKey struct {
+		TableName      string
+		ConstraintName string
+	}
+
+	var dbName string
+	if err := db.Raw("SELECT DATABASE()").Scan(&dbName).Error; err != nil {
+		return fmt.Errorf("获取当前数据库名失败: %v", err)
+	}
+
+	var fks []ForeignKey
+	if err := db.Raw(`
+		SELECT TABLE_NAME, CONSTRAINT_NAME
+		FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+		WHERE CONSTRAINT_TYPE = 'FOREIGN KEY' AND TABLE_SCHEMA = ?
+	`, dbName).Scan(&fks).Error; err != nil {
+		return fmt.Errorf("查询外键失败: %v", err)
+	}
+
+	for _, fk := range fks {
+		stmt := fmt.Sprintf("ALTER TABLE `%s` DROP FOREIGN KEY `%s`", fk.TableName, fk.ConstraintName)
+		if err := db.Exec(stmt).Error; err != nil {
+			log.Printf("删除外键失败 table=%s constraint=%s: %v", fk.TableName, fk.ConstraintName, err)
+		}
+	}
+
+	log.Println("✅ 所有外键约束删除完成")
 	return nil
 }
 

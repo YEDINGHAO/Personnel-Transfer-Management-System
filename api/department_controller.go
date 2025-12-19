@@ -2,6 +2,8 @@
 package api
 
 import (
+	"strconv"
+
 	"github.com/YEDINGHAO/Personnel-Transfer-Management-System/database"
 	"github.com/YEDINGHAO/Personnel-Transfer-Management-System/models"
 	"github.com/gin-gonic/gin"
@@ -70,8 +72,27 @@ func (dc *DepartmentController) UpdateDepartment(c *gin.Context) {
 // DeleteDepartment 删除部门
 func (dc *DepartmentController) DeleteDepartment(c *gin.Context) {
 	id := c.Param("id")
+	deptID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		errorResponse(c, 400, "无效的部门ID")
+		return
+	}
+
 	db := database.GetDB()
-	if err := db.Delete(&models.Department{}, id).Error; err != nil {
+	var dept models.Department
+	if err := db.First(&dept, deptID).Error; err != nil {
+		errorResponse(c, 404, "部门不存在")
+		return
+	}
+
+	var transferCount int64
+	db.Model(&models.Transfer{}).Where("from_dept_id = ? OR to_dept_id = ?", uint(deptID), uint(deptID)).Count(&transferCount)
+	if transferCount > 0 {
+		errorResponse(c, 400, "该部门存在关联的调动记录，无法删除")
+		return
+	}
+
+	if err := db.Delete(&models.Department{}, deptID).Error; err != nil {
 		errorResponse(c, 500, "删除部门失败")
 		return
 	}

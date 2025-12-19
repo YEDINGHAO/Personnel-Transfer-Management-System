@@ -390,7 +390,6 @@ func (ec *EmployeeController) UpdateEmployee(c *gin.Context) {
 func (ec *EmployeeController) DeleteEmployee(c *gin.Context) {
 	id := c.Param("id")
 
-	// 参数验证
 	employeeID, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
 		errorResponse(c, 400, "无效的员工ID")
@@ -399,7 +398,6 @@ func (ec *EmployeeController) DeleteEmployee(c *gin.Context) {
 
 	db := database.GetDB()
 
-	// 检查员工是否存在
 	var count int64
 	db.Model(&models.Employee{}).Where("id = ?", employeeID).Count(&count)
 	if count == 0 {
@@ -407,7 +405,20 @@ func (ec *EmployeeController) DeleteEmployee(c *gin.Context) {
 		return
 	}
 
-	// 删除员工
+	var transferCount int64
+	db.Model(&models.Transfer{}).Where("employee_id = ?", uint(employeeID)).Count(&transferCount)
+	if transferCount > 0 {
+		errorResponse(c, 400, "该员工存在调动记录，无法删除")
+		return
+	}
+
+	var deptCount int64
+	db.Model(&models.Department{}).Where("manager_id = ?", uint(employeeID)).Count(&deptCount)
+	if deptCount > 0 {
+		errorResponse(c, 400, "该员工是某些部门的主管，无法删除")
+		return
+	}
+
 	result := db.Delete(&models.Employee{}, employeeID)
 	if result.Error != nil {
 		errorResponse(c, 500, "删除员工失败: "+result.Error.Error())

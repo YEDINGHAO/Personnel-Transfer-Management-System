@@ -153,7 +153,7 @@ const remove = async d => {
   if (data.code === 0) {
     loadDepartments()
   } else {
-    alert(data.message || "删除失败")
+    alert(data.message || "删除失败：该部门可能存在关联的调动记录")
   }
 }
 
@@ -161,4 +161,3 @@ onMounted(() => {
   loadDepartments()
 })
 </script>
-

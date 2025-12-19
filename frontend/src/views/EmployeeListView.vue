@@ -313,7 +313,7 @@ const remove = async emp => {
   if (data.code === 0) {
     loadEmployees()
   } else {
-    alert(data.message || "删除失败")
+    alert(data.message || "删除失败：该员工可能存在调动记录或是部门主管")
   }
 }
 
